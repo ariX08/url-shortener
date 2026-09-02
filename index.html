@@ -3,130 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shorten — Professional URL Shortener</title>
-  <meta name="description" content="Create short links, track clicks, and manage your URLs with a clean professional shortener.">
+  <title>Shortly — Short links that feel good</title>
+  <meta name="description" content="Create clean short links with click tracking and QR codes.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <nav class="top-nav">
     <div class="nav-inner">
-      <a href="index.html" class="logo">
-        <span class="logo-mark">S</span>
-        <span class="logo-text">Shorten</span>
+      <a href="index.html" class="logo-link" aria-label="Shortly home">
+        <img src="favicon.svg" alt="" class="logo-icon" width="36" height="36">
+        <span class="logo-word">Shortly</span>
       </a>
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="security.html">Security</a>
         <a href="privacy.html">Privacy</a>
       </div>
-      <div class="nav-actions">
-        <button type="button" class="btn-text" id="history-toggle">History</button>
-      </div>
+      <button type="button" class="btn-ghost" id="history-toggle">History</button>
     </div>
   </nav>
 
-  <section class="hero">
-    <div class="hero-card">
-      <div class="card-tabs">
-        <button type="button" class="tab active" data-tab="link">
-          <span class="tab-icon">&#128279;</span> Short Link
-        </button>
-        <button type="button" class="tab" data-tab="qr">
-          <span class="tab-icon">&#9638;</span> QR Code
-        </button>
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">URL shortener</p>
+        <h1>Short links,<br>done right.</h1>
+        <p class="lead">Paste a long URL. Get a clean short link with click tracking and a QR code. Free and permanent.</p>
       </div>
 
-      <div class="card-body">
-        <h1>Shorten a long link</h1>
-        <p class="sub">Free. No credit card. Real click tracking.</p>
+      <div class="tool-card">
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="link">Short Link</button>
+          <button type="button" class="tab" data-tab="qr">QR Code</button>
+        </div>
 
-        <form id="shorten-form">
-          <label for="url-input" class="field-label">Paste your long link here</label>
+        <form id="shorten-form" class="tool-form">
+          <label for="url-input" class="label">Long URL</label>
           <input
             type="url"
             id="url-input"
-            placeholder="https://example.com/my-long-url"
+            placeholder="https://example.com/very/long/path"
             required
             autocomplete="off"
             spellcheck="false"
           >
-          <div class="form-actions">
-            <button type="submit" id="submit-btn" class="btn-primary">
-              Get your link for free
-              <span class="arrow">&rarr;</span>
-            </button>
-          </div>
+          <button type="submit" id="submit-btn" class="btn-primary">
+            Shorten
+          </button>
         </form>
 
         <div id="result" class="result hidden">
-          <div class="result-box">
+          <div class="result-row">
             <input type="text" id="short-url" readonly>
             <button type="button" id="copy-btn" class="btn-secondary">Copy</button>
           </div>
           <p id="status" class="status"></p>
           <div id="qr-preview" class="qr-preview hidden">
             <canvas id="qr-canvas" width="160" height="160"></canvas>
-            <p class="qr-note">Scan or right-click to save</p>
+            <p class="qr-note">Right-click to save</p>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <section id="features" class="features">
+      <div class="feature">
+        <div class="feature-dot"></div>
+        <h3>Permanent</h3>
+        <p>Stored in a real database. Links stay up unless you remove them.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-dot"></div>
+        <h3>Tracked</h3>
+        <p>Every click is counted so you know how your links perform.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-dot"></div>
+        <h3>QR ready</h3>
+        <p>Generate a scannable code for any short link in one click.</p>
+      </div>
+    </section>
+  </main>
 
   <aside id="history-panel" class="history-panel" aria-hidden="true">
     <div class="panel-header">
-      <h2>Your recent links</h2>
-      <button type="button" id="close-history" class="btn-icon" aria-label="Close">&times;</button>
+      <h2>Recent links</h2>
+      <button type="button" id="close-history" class="btn-icon" aria-label="Close">×</button>
     </div>
     <ul id="history-list"></ul>
-    <p class="panel-empty hidden" id="history-empty">No links yet. Create one above.</p>
+    <p class="panel-empty hidden" id="history-empty">No links yet.</p>
   </aside>
   <div id="history-overlay" class="overlay hidden"></div>
 
-  <section id="features" class="features">
-    <div class="feature">
-      <h3>Permanent links</h3>
-      <p>Stored in a real database. Links do not expire unless you set them to.</p>
-    </div>
-    <div class="feature">
-      <h3>Click tracking</h3>
-      <p>Every visit is counted. See how many times each short link is used.</p>
-    </div>
-    <div class="feature">
-      <h3>QR codes</h3>
-      <p>Generate a scannable QR for any short link instantly.</p>
-    </div>
-  </section>
-
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-brand">
-        <span class="logo-mark small">S</span>
-        <span>Shorten</span>
+      <div class="footer-top">
+        <a href="index.html" class="footer-brand">
+          <img src="favicon.svg" alt="" width="28" height="28">
+          <span>Shortly</span>
+        </a>
+        <div class="footer-links">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+          <a href="security.html">Security</a>
+          <a href="cookies.html">Cookies</a>
+          <button type="button" id="open-cookie-prefs" class="footer-btn">Cookie Preferences</button>
+        </div>
       </div>
-      <div class="footer-links">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="security.html">Security</a>
-        <a href="cookies.html">Cookie Policy</a>
-        <button type="button" id="open-cookie-prefs" class="footer-btn">Cookie Preferences</button>
+      <div class="footer-bottom">
+        <p>© 2026 Shortly</p>
+        <p>
+          made by
+          <a href="https://arix.faltuworkonly91.workers.dev/" target="_blank" rel="noopener" class="credit-link">ARITRA.DESIGN</a>
+        </p>
       </div>
-      <p class="footer-copy">&copy; 2026 Shorten. Built for reliability.</p>
     </div>
   </footer>
 
   <div id="cookie-banner" class="cookie-banner hidden">
-    <div class="cookie-content">
+    <div class="cookie-inner">
       <p>
-        We use essential cookies to make the service work and optional analytics cookies to understand usage.
-        You can change your choices at any time.
-        See our <a href="cookies.html">Cookie Policy</a> and <a href="privacy.html">Privacy Policy</a>.
+        We use essential cookies so the service works, and optional analytics if you allow them.
+        <a href="cookies.html">Cookie Policy</a> · <a href="privacy.html">Privacy</a>
       </p>
       <div class="cookie-actions">
-        <button type="button" id="cookie-accept-all" class="btn-primary small">Accept All</button>
-        <button type="button" id="cookie-essential" class="btn-secondary small">Essential Only</button>
-        <button type="button" id="cookie-customize" class="btn-text small">Customize</button>
+        <button type="button" id="cookie-accept-all" class="btn-primary small">Accept all</button>
+        <button type="button" id="cookie-essential" class="btn-secondary small">Essential only</button>
+        <button type="button" id="cookie-customize" class="btn-ghost small">Customize</button>
       </div>
     </div>
   </div>
@@ -134,13 +142,13 @@
   <div id="cookie-modal" class="modal hidden" role="dialog" aria-labelledby="cookie-modal-title">
     <div class="modal-backdrop"></div>
     <div class="modal-box">
-      <h2 id="cookie-modal-title">Cookie Preferences</h2>
-      <p class="modal-desc">Choose which cookies you allow. Essential cookies are always on because the service cannot function without them.</p>
+      <h2 id="cookie-modal-title">Cookie preferences</h2>
+      <p class="modal-desc">Essential cookies are always on. Analytics are optional.</p>
 
       <div class="pref-row">
         <div>
           <strong>Essential</strong>
-          <p>Required for core functionality, security, and remembering your cookie choices.</p>
+          <p>Required for core features and remembering your choices.</p>
         </div>
         <span class="badge">Always on</span>
       </div>
@@ -148,7 +156,7 @@
       <div class="pref-row">
         <div>
           <strong>Analytics</strong>
-          <p>Help us understand how the shortener is used so we can improve it. No personal advertising.</p>
+          <p>Anonymous usage data to improve Shortly. No ads.</p>
         </div>
         <label class="switch">
           <input type="checkbox" id="pref-analytics">
@@ -157,8 +165,8 @@
       </div>
 
       <div class="modal-actions">
-        <button type="button" id="save-prefs" class="btn-primary">Save preferences</button>
-        <button type="button" id="close-modal" class="btn-text">Cancel</button>
+        <button type="button" id="save-prefs" class="btn-primary">Save</button>
+        <button type="button" id="close-modal" class="btn-ghost">Cancel</button>
       </div>
     </div>
   </div>
