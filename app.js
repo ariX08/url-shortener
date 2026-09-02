@@ -188,7 +188,7 @@ form.addEventListener("submit", async (e) => {
     setStatus(err.message || "Something went wrong.", "error");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = 'Get your link for free <span class="arrow">&rarr;</span>';
+    submitBtn.textContent = "Shorten";
   }
 });
 
