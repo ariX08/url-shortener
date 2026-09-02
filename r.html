@@ -12,17 +12,13 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
-      background: #f7f9fb;
-      color: #1a202c;
+      background: #fafbf7;
+      color: #14161a;
     }
-    .box {
-      text-align: center;
-      padding: 2rem;
-      max-width: 420px;
-    }
-    .msg { color: #4a5568; margin-top: 0.75rem; font-size: 0.95rem; }
-    a { color: #2b6cb0; }
-    code { background: #edf2f7; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+    .box { text-align: center; padding: 2rem; max-width: 420px; }
+    .msg { color: #8a8d98; margin-top: 0.75rem; font-size: 0.95rem; }
+    a { color: #3f3df2; }
+    code { background: #e8e9ee; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -49,11 +45,10 @@
         return;
       }
 
-      // Timeout so we never hang forever
       const timeout = setTimeout(() => {
         fail(
           "Request timed out.",
-          "Check your Supabase URL/key in <code>config.js</code> and that the <code>links</code> table exists."
+          "Check your Supabase URL/key in <code>config.js</code> and that you ran the latest <code>schema.sql</code>."
         );
       }, 8000);
 
@@ -80,45 +75,65 @@
 
         const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-        const { data, error } = await sb
-          .from("links")
-          .select("original_url, expires_at")
-          .eq("short_code", code)
-          .maybeSingle();
+        // Prefer secure RPC that increments + cleans expired
+        let original = null;
+        let expired = false;
+
+        const { data: rpcData, error: rpcError } = await sb.rpc("resolve_and_touch", { code });
+
+        if (!rpcError && rpcData && rpcData.length) {
+          original = rpcData[0].original_url;
+          expired = rpcData[0].expired;
+        } else {
+          // Fallback for older schema
+          const { data, error } = await sb
+            .from("links")
+            .select("original_url, expires_at")
+            .eq("short_code", code)
+            .maybeSingle();
+
+          if (error) {
+            clearTimeout(timeout);
+            fail(
+              "Database error.",
+              (error.message || "Unknown") +
+                "<br><br>Run the latest <code>schema.sql</code> in the Supabase SQL Editor."
+            );
+            return;
+          }
+          if (!data) {
+            clearTimeout(timeout);
+            fail("Link not found.", '<a href="index.html">Create a new one</a>');
+            return;
+          }
+          if (data.expires_at && new Date(data.expires_at) <= new Date()) {
+            expired = true;
+            original = data.original_url;
+            try {
+              await sb.from("links").delete().eq("short_code", code);
+            } catch (_) {}
+          } else {
+            original = data.original_url;
+            try {
+              await sb.rpc("increment_clicks", { code });
+            } catch (_) {}
+          }
+        }
 
         clearTimeout(timeout);
 
-        if (error) {
-          fail(
-            "Database error.",
-            (error.message || "Unknown error") +
-              '<br><br>Make sure you ran <code>schema.sql</code> in the Supabase SQL Editor.'
-          );
+        if (!original) {
+          fail("Link not found.", '<a href="index.html">Create a new one</a>');
           return;
         }
 
-        if (!data) {
-          fail(
-            "Link not found.",
-            "This short code does not exist in the database.<br><br>" +
-              "If you created the link before adding Supabase keys, create it again.<br>" +
-              '<a href="index.html">Create a new link</a>'
-          );
+        if (expired) {
+          fail("This link has expired and was removed.", '<a href="index.html">Create a new one</a>');
           return;
         }
-
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          fail("This link has expired.");
-          return;
-        }
-
-        // Best-effort click increment
-        try {
-          await sb.rpc("increment_clicks", { code });
-        } catch (_) {}
 
         status.textContent = "Redirecting…";
-        window.location.replace(data.original_url);
+        window.location.replace(original);
       } catch (err) {
         clearTimeout(timeout);
         fail(

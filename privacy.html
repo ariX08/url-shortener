@@ -4,14 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — Shortly</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <nav class="top-nav">
     <div class="nav-inner">
-      <a href="index.html" class="logo">
-        <span class="logo-mark">S</span>
-        <span class="logo-text">Shortly</span>
+      <a href="index.html" class="logo-link" aria-label="Shortly home">
+        <img src="favicon.svg" alt="" class="logo-icon" width="36" height="36">
+        <span class="logo-word">Shortly</span>
       </a>
       <div class="nav-links">
         <a href="index.html">Home</a>
@@ -32,7 +36,7 @@
     <ul>
       <li>The original long URL you submit</li>
       <li>A randomly generated short code</li>
-      <li>Creation timestamp</li>
+      <li>Creation timestamp and optional expiry time</li>
       <li>Aggregate click counts</li>
     </ul>
     <p>We do not require an account. We do not intentionally collect names, email addresses, or payment information for the free public service.</p>
@@ -42,6 +46,7 @@
     <ul>
       <li>To create and resolve short links</li>
       <li>To count clicks and display basic statistics</li>
+      <li>To enforce link expiry and delete expired records</li>
       <li>To maintain security and prevent abuse</li>
       <li>To improve the service when analytics cookies are enabled</li>
     </ul>
@@ -53,7 +58,7 @@
     <p>Link data is stored in a Supabase (PostgreSQL) database. Supabase acts as a data processor. Hosting may be provided by GitHub Pages or another static host. These providers process data under their own privacy terms.</p>
 
     <h2>5. Retention</h2>
-    <p>Short links and associated metadata are retained until you request deletion or until we decide to purge inactive links after a reasonable period. Click counts are aggregate and are not tied to individual visitors beyond the technical logs of the database provider.</p>
+    <p>Short links are retained until their chosen expiry (12 hours, 24 hours, or forever) or until you request deletion. Expired links are removed from the database. Click counts are aggregate and are not tied to individual visitors beyond the technical logs of the database provider.</p>
 
     <h2>6. Your Rights</h2>
     <p>Depending on your location you may have rights to access, correct, or delete personal data we hold about you. Because the free service does not require accounts, most data is not linked to an identifiable person. Contact us if you believe a specific short code contains personal information that should be removed.</p>
@@ -70,13 +75,22 @@
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-links">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="security.html">Security</a>
-        <a href="cookies.html">Cookie Policy</a>
+      <div class="footer-top">
+        <a href="index.html" class="footer-brand">
+          <img src="favicon.svg" alt="" width="28" height="28">
+          <span>Shortly</span>
+        </a>
+        <div class="footer-links">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+          <a href="security.html">Security</a>
+          <a href="cookies.html">Cookies</a>
+        </div>
       </div>
-      <p class="footer-copy">&copy; 2026 Shortly</p>
+      <div class="footer-bottom">
+        <p>© 2026 Shortly</p>
+        <p>made by <a href="https://arix.faltuworkonly91.workers.dev/" target="_blank" rel="noopener" class="credit-link">ARITRA.DESIGN</a></p>
+      </div>
     </div>
   </footer>
 </body>

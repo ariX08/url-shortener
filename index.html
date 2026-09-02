@@ -52,7 +52,13 @@
             autocomplete="off"
             spellcheck="false"
           >
-          <button type="submit" id="submit-btn" class="btn-primary">
+          <label class="label" style="margin-top:0.9rem">Keep link for</label>
+          <div class="expiry-row" role="group" aria-label="Link expiry">
+            <label class="expiry-opt"><input type="radio" name="expiry" value="12h"> 12 hours</label>
+            <label class="expiry-opt"><input type="radio" name="expiry" value="24h"> 24 hours</label>
+            <label class="expiry-opt"><input type="radio" name="expiry" value="forever" checked> Forever</label>
+          </div>
+          <button type="submit" id="submit-btn" class="btn-primary" style="margin-top:1rem">
             Shorten
           </button>
         </form>

@@ -24,8 +24,6 @@ alter table public.links enable row level security;
 drop policy if exists "Public can insert links" on public.links;
 drop policy if exists "Public can select links" on public.links;
 drop policy if exists "Public can update clicks" on public.links;
-drop policy if exists "anon_insert_links" on public.links;
-drop policy if exists "anon_select_links" on public.links;
 
 -- Insert: anyone can create a link (public shortener)
 create policy "anon_insert_links"

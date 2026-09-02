@@ -745,6 +745,39 @@ body {
 }
 
 /* Responsive */
+
+/* Expiry options */
+.expiry-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.expiry-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.expiry-opt:has(input:checked) {
+  border-color: var(--indigo);
+  background: rgba(63, 61, 242, 0.06);
+  color: var(--ink);
+}
+
+.expiry-opt input {
+  accent-color: var(--indigo);
+}
+
 @media (max-width: 860px) {
   .hero {
     grid-template-columns: 1fr;

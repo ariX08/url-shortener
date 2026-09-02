@@ -1,4 +1,4 @@
-/* global supabase, SUPABASE_URL, SUPABASE_ANON_KEY, SHORT_BASE */
+/* global supabase */
 
 const form = document.getElementById("shorten-form");
 const urlInput = document.getElementById("url-input");
@@ -27,9 +27,9 @@ const prefAnalytics = document.getElementById("pref-analytics");
 const savePrefs = document.getElementById("save-prefs");
 const closeModal = document.getElementById("close-modal");
 
-const LOCAL_HISTORY_KEY = "shorten_local_history";
-const COOKIE_CONSENT_KEY = "shorten_cookie_consent";
-const MAX_LOCAL = 30;
+const LOCAL_HISTORY_KEY = "shortly_local_history";
+const COOKIE_CONSENT_KEY = "shortly_cookie_consent";
+const MAX_LOCAL = 40;
 
 let sb = null;
 let currentTab = "link";
@@ -75,27 +75,6 @@ function addLocalHistory(entry) {
   let items = loadLocalHistory().filter((i) => i.code !== entry.code);
   items.unshift(entry);
   saveLocalHistory(items);
-  renderHistory();
-}
-
-function renderHistory() {
-  const items = loadLocalHistory();
-  if (items.length === 0) {
-    historyList.innerHTML = "";
-    historyEmpty.classList.remove("hidden");
-    return;
-  }
-  historyEmpty.classList.add("hidden");
-  historyList.innerHTML = items
-    .map(
-      (item) => `
-    <li>
-      <div class="hist-short"><a href="${escapeHtml(item.short)}" target="_blank" rel="noopener">${escapeHtml(item.short)}</a></div>
-      <div class="hist-long" title="${escapeHtml(item.original)}">${escapeHtml(item.original)}</div>
-      <div class="hist-meta">${item.clicks != null ? item.clicks + " clicks · " : ""}${new Date(item.ts).toLocaleDateString()}</div>
-    </li>`
-    )
-    .join("");
 }
 
 function escapeHtml(str) {
@@ -111,46 +90,129 @@ function setStatus(msg, type = "") {
 
 function buildShortUrl(code) {
   const base = (window.SHORT_BASE || window.location.origin).replace(/\/$/, "");
-  return `${base}/r.html?c=${code}`;
+  // Prefer path relative to current folder
+  const path = window.location.pathname.replace(/\/[^/]*$/, "") || "";
+  return `${window.location.origin}${path}/r.html?c=${code}`;
+}
+
+function getSelectedExpiry() {
+  const el = document.querySelector('input[name="expiry"]:checked');
+  return el ? el.value : "forever";
+}
+
+function expiryToTimestamp(value) {
+  if (value === "12h") return new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  if (value === "24h") return new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  return null; // forever
+}
+
+function formatExpiry(ts) {
+  if (!ts) return "Forever";
+  const d = new Date(ts);
+  if (d < new Date()) return "Expired";
+  return "Until " + d.toLocaleString();
 }
 
 async function createLink(originalUrl) {
   const code = generateCode(7);
+  const expiryVal = getSelectedExpiry();
+  const expires_at = expiryToTimestamp(expiryVal);
 
   if (sb) {
-    const { error } = await sb.from("links").insert({
+    const row = {
       short_code: code,
       original_url: originalUrl,
       clicks: 0,
-    });
-
+      expires_at,
+    };
+    const { error } = await sb.from("links").insert(row);
     if (error) {
-      // collision retry once
-      if (error.code === "23505") {
-        return createLink(originalUrl);
-      }
+      if (error.code === "23505") return createLink(originalUrl);
       throw new Error(error.message || "Database error");
     }
   }
 
   const short = buildShortUrl(code);
-  return { code, short, original: originalUrl };
+  return { code, short, original: originalUrl, expires_at, expiryLabel: expiryVal };
 }
 
 function drawSimpleQR(text, canvas) {
-  // Lightweight placeholder QR using a free external service for reliability.
-  // For fully offline QR you can later swap to a local library.
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, 160, 160);
   const img = new Image();
   img.crossOrigin = "anonymous";
-  img.onload = () => {
-    ctx.drawImage(img, 0, 0, 160, 160);
-  };
+  img.onload = () => ctx.drawImage(img, 0, 0, 160, 160);
   img.src =
     "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" +
     encodeURIComponent(text);
+}
+
+async function refreshHistoryClicks() {
+  const items = loadLocalHistory();
+  if (!sb || items.length === 0) {
+    renderHistory(items);
+    return;
+  }
+  const codes = items.map((i) => i.code);
+  try {
+    const { data, error } = await sb
+      .from("links")
+      .select("short_code, clicks, expires_at, created_at")
+      .in("short_code", codes);
+    if (error || !data) {
+      renderHistory(items);
+      return;
+    }
+    const map = Object.fromEntries(data.map((r) => [r.short_code, r]));
+    const merged = items.map((item) => {
+      const live = map[item.code];
+      if (!live) return { ...item, clicks: item.clicks ?? 0, missing: true };
+      return {
+        ...item,
+        clicks: live.clicks,
+        expires_at: live.expires_at,
+        created_at: live.created_at,
+        missing: false,
+      };
+    });
+    saveLocalHistory(merged);
+    renderHistory(merged);
+  } catch {
+    renderHistory(items);
+  }
+}
+
+function renderHistory(items) {
+  if (!items) items = loadLocalHistory();
+  if (items.length === 0) {
+    historyList.innerHTML = "";
+    historyEmpty.classList.remove("hidden");
+    return;
+  }
+  historyEmpty.classList.add("hidden");
+  historyList.innerHTML = items
+    .map((item) => {
+      const clicks = item.clicks != null ? item.clicks : 0;
+      const exp = formatExpiry(item.expires_at);
+      const created = item.ts
+        ? new Date(item.ts).toLocaleString()
+        : item.created_at
+        ? new Date(item.created_at).toLocaleString()
+        : "";
+      const missingNote = item.missing
+        ? '<span class="hist-meta">Removed from database</span>'
+        : "";
+      return `
+    <li>
+      <div class="hist-short"><a href="${escapeHtml(item.short)}" target="_blank" rel="noopener">${escapeHtml(item.short)}</a></div>
+      <div class="hist-long" title="${escapeHtml(item.original)}">${escapeHtml(item.original)}</div>
+      <div class="hist-meta">${clicks} click${clicks === 1 ? "" : "s"} · ${exp}</div>
+      <div class="hist-meta">${created}</div>
+      ${missingNote}
+    </li>`;
+    })
+    .join("");
 }
 
 form.addEventListener("submit", async (e) => {
@@ -165,16 +227,24 @@ form.addEventListener("submit", async (e) => {
   setStatus("");
 
   try {
-    const { code, short, original } = await createLink(longUrl);
+    const { code, short, original, expires_at, expiryLabel } = await createLink(longUrl);
     shortUrlInput.value = short;
     resultEl.classList.remove("hidden");
-    setStatus(sb ? "Link saved to database." : "Link created (local mode — add Supabase keys for permanent storage).", "success");
+    const expMsg =
+      expiryLabel === "forever"
+        ? "Link saved (forever)."
+        : `Link saved (expires in ${expiryLabel}).`;
+    setStatus(
+      sb ? expMsg : "Link created in local mode — add Supabase keys for permanent storage.",
+      "success"
+    );
 
     addLocalHistory({
       code,
       short,
       original,
       clicks: 0,
+      expires_at,
       ts: Date.now(),
     });
 
@@ -205,7 +275,6 @@ copyBtn.addEventListener("click", async () => {
   }
 });
 
-// Tabs
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -220,12 +289,11 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-// History panel
 function openHistory() {
   historyPanel.classList.add("open");
   historyPanel.setAttribute("aria-hidden", "false");
   historyOverlay.classList.remove("hidden");
-  renderHistory();
+  refreshHistoryClicks();
 }
 
 function closeHistoryPanel() {
@@ -238,7 +306,6 @@ historyToggle.addEventListener("click", openHistory);
 closeHistory.addEventListener("click", closeHistoryPanel);
 historyOverlay.addEventListener("click", closeHistoryPanel);
 
-// Cookie consent
 function getConsent() {
   try {
     return JSON.parse(localStorage.getItem(COOKIE_CONSENT_KEY));
@@ -252,9 +319,7 @@ function setConsent(obj) {
 }
 
 function showBannerIfNeeded() {
-  if (!getConsent()) {
-    cookieBanner.classList.remove("hidden");
-  }
+  if (!getConsent()) cookieBanner.classList.remove("hidden");
 }
 
 cookieAcceptAll.addEventListener("click", () => {
@@ -280,19 +345,12 @@ openCookiePrefs.addEventListener("click", () => {
 });
 
 savePrefs.addEventListener("click", () => {
-  setConsent({
-    essential: true,
-    analytics: prefAnalytics.checked,
-    ts: Date.now(),
-  });
+  setConsent({ essential: true, analytics: prefAnalytics.checked, ts: Date.now() });
   cookieModal.classList.add("hidden");
   cookieBanner.classList.add("hidden");
 });
 
-closeModal.addEventListener("click", () => {
-  cookieModal.classList.add("hidden");
-});
-
+closeModal.addEventListener("click", () => cookieModal.classList.add("hidden"));
 cookieModal.querySelector(".modal-backdrop").addEventListener("click", () => {
   cookieModal.classList.add("hidden");
 });
