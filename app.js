@@ -48,7 +48,7 @@ function initSupabase() {
 
 sb = initSupabase();
 
-function generateCode(length = 7) {
+function generateCode(length = 5) {
   const alphabet = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
   const arr = new Uint8Array(length);
   crypto.getRandomValues(arr);
@@ -114,7 +114,7 @@ function formatExpiry(ts) {
 }
 
 async function createLink(originalUrl) {
-  const code = generateCode(7);
+  const code = generateCode(5);
   const expiryVal = getSelectedExpiry();
   const expires_at = expiryToTimestamp(expiryVal);
 
