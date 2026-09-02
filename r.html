@@ -73,6 +73,15 @@
         return;
       }
 
+      // Fire-and-forget click increment
+      sb.rpc("increment_clicks", { code }).catch(() => {
+        sb.from("links")
+          .update({ clicks: sb.rpc ? undefined : 1 }) // fallback ignored
+          .eq("short_code", code)
+          .then(() => {});
+      });
+
+      // Safer: just try the RPC, ignore failure
       try {
         await sb.rpc("increment_clicks", { code });
       } catch (_) {}

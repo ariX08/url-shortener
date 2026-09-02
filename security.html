@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security — Shorten</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">S</span>
+        <span class="logo-text">Shorten</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="legal-page">
+    <h1>Security</h1>
+    <p class="updated">Last updated: 2 September 2026</p>
+
+    <p>We take practical steps to keep the service and your data reasonably secure. This page describes those measures and known limitations.</p>
+
+    <h2>1. Data in Transit</h2>
+    <p>All traffic between your browser and the hosting provider, and between the application and the Supabase database, occurs over HTTPS.</p>
+
+    <h2>2. Database Access</h2>
+    <p>Short-link records are stored in a PostgreSQL database managed by Supabase. Access from the browser uses the public anon key together with Row Level Security (RLS) policies that only permit insert and select of link records, plus a restricted function for incrementing click counts.</p>
+    <p>The service key is never exposed in client-side code.</p>
+
+    <h2>3. Short Codes</h2>
+    <p>Short codes are generated with a cryptographically secure random number generator. The default length provides a large space that makes casual guessing impractical. Collisions are handled by retrying with a new code.</p>
+
+    <h2>4. Abuse Prevention</h2>
+    <p>We rely on rate limiting at the database and hosting layers, and we reserve the right to disable links or block traffic that appears abusive. You remain responsible for the destinations of the links you create.</p>
+
+    <h2>5. Limitations</h2>
+    <ul>
+      <li>This is a free public shortener. It is not designed for high-security or regulated workloads.</li>
+      <li>Anyone who obtains a short code can resolve it. Do not put secrets in the path or query string of a long URL if you care about confidentiality.</li>
+      <li>Click counts are best-effort and can be inflated by bots.</li>
+      <li>We do not currently offer password-protected links or two-factor protection on individual short URLs.</li>
+    </ul>
+
+    <h2>6. Reporting Security Issues</h2>
+    <p>If you discover a vulnerability, please report it privately through the project repository's security advisory or issue tracker. We appreciate responsible disclosure and will work to address valid reports promptly.</p>
+
+    <h2>7. Third-Party Services</h2>
+    <p>We depend on Supabase for the database and on a static host (for example GitHub Pages) for the front end. Their security practices apply to those layers. Optional QR code generation may use a third-party image API; that API only receives the short URL string.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="security.html">Security</a>
+        <a href="cookies.html">Cookie Policy</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Shorten</p>
+    </div>
+  </footer>
+</body>
+</html>
