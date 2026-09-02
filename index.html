@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shorten</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Shorten</h1>
+      <p class="tagline">Paste a long URL. Get a short one.</p>
+    </header>
+
+    <main>
+      <form id="shorten-form" autocomplete="off">
+        <label for="url-input" class="sr-only">URL to shorten</label>
+        <div class="input-row">
+          <input
+            type="url"
+            id="url-input"
+            name="url"
+            placeholder="https://example.com/very/long/path"
+            required
+            spellcheck="false"
+          >
+          <button type="submit" id="submit-btn">Shorten</button>
+        </div>
+      </form>
+
+      <div id="result" class="result hidden" aria-live="polite">
+        <div class="result-row">
+          <input type="text" id="short-url" readonly>
+          <button type="button" id="copy-btn">Copy</button>
+        </div>
+        <p id="status" class="status"></p>
+      </div>
+
+      <section id="history-section" class="history hidden">
+        <div class="history-header">
+          <h2>Recent</h2>
+          <button type="button" id="clear-history" class="text-btn">Clear</button>
+        </div>
+        <ul id="history-list"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>Uses the CleanURI public API. Links are permanent.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
