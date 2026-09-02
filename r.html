@@ -18,9 +18,11 @@
     .box {
       text-align: center;
       padding: 2rem;
+      max-width: 420px;
     }
-    .msg { color: #4a5568; margin-top: 0.5rem; }
+    .msg { color: #4a5568; margin-top: 0.75rem; font-size: 0.95rem; }
     a { color: #2b6cb0; }
+    code { background: #edf2f7; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -37,57 +39,94 @@
       const status = document.getElementById("status");
       const detail = document.getElementById("detail");
 
+      function fail(title, message) {
+        status.textContent = title;
+        detail.innerHTML = message || "";
+      }
+
       if (!code) {
-        status.textContent = "Missing short code.";
-        detail.innerHTML = '<a href="index.html">Go back</a>';
+        fail("Missing short code.", '<a href="index.html">Go back</a>');
         return;
       }
 
-      if (
-        !window.SUPABASE_URL ||
-        window.SUPABASE_URL.includes("YOUR_PROJECT") ||
-        !window.SUPABASE_ANON_KEY ||
-        window.SUPABASE_ANON_KEY.includes("YOUR_ANON")
-      ) {
-        status.textContent = "Supabase is not configured.";
-        detail.textContent = "Add your project URL and anon key in config.js";
-        return;
-      }
+      // Timeout so we never hang forever
+      const timeout = setTimeout(() => {
+        fail(
+          "Request timed out.",
+          "Check your Supabase URL/key in <code>config.js</code> and that the <code>links</code> table exists."
+        );
+      }, 8000);
 
-      const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-
-      const { data, error } = await sb
-        .from("links")
-        .select("original_url, expires_at")
-        .eq("short_code", code)
-        .maybeSingle();
-
-      if (error || !data) {
-        status.textContent = "Link not found.";
-        detail.innerHTML = '<a href="index.html">Create a new one</a>';
-        return;
-      }
-
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        status.textContent = "This link has expired.";
-        return;
-      }
-
-      // Fire-and-forget click increment
-      sb.rpc("increment_clicks", { code }).catch(() => {
-        sb.from("links")
-          .update({ clicks: sb.rpc ? undefined : 1 }) // fallback ignored
-          .eq("short_code", code)
-          .then(() => {});
-      });
-
-      // Safer: just try the RPC, ignore failure
       try {
-        await sb.rpc("increment_clicks", { code });
-      } catch (_) {}
+        if (
+          !window.SUPABASE_URL ||
+          window.SUPABASE_URL.includes("YOUR_PROJECT") ||
+          !window.SUPABASE_ANON_KEY ||
+          window.SUPABASE_ANON_KEY.includes("YOUR_ANON")
+        ) {
+          clearTimeout(timeout);
+          fail(
+            "Supabase is not configured.",
+            "Open <code>config.js</code> and paste your real Project URL and anon public key."
+          );
+          return;
+        }
 
-      status.textContent = "Redirecting…";
-      window.location.replace(data.original_url);
+        if (typeof supabase === "undefined") {
+          clearTimeout(timeout);
+          fail("Supabase library failed to load.", "Check your network or ad-blocker.");
+          return;
+        }
+
+        const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+        const { data, error } = await sb
+          .from("links")
+          .select("original_url, expires_at")
+          .eq("short_code", code)
+          .maybeSingle();
+
+        clearTimeout(timeout);
+
+        if (error) {
+          fail(
+            "Database error.",
+            (error.message || "Unknown error") +
+              '<br><br>Make sure you ran <code>schema.sql</code> in the Supabase SQL Editor.'
+          );
+          return;
+        }
+
+        if (!data) {
+          fail(
+            "Link not found.",
+            "This short code does not exist in the database.<br><br>" +
+              "If you created the link before adding Supabase keys, create it again.<br>" +
+              '<a href="index.html">Create a new link</a>'
+          );
+          return;
+        }
+
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          fail("This link has expired.");
+          return;
+        }
+
+        // Best-effort click increment
+        try {
+          await sb.rpc("increment_clicks", { code });
+        } catch (_) {}
+
+        status.textContent = "Redirecting…";
+        window.location.replace(data.original_url);
+      } catch (err) {
+        clearTimeout(timeout);
+        fail(
+          "Something went wrong.",
+          (err && err.message ? err.message : "Unknown error") +
+            "<br><br>Check the browser console (F12) for more details."
+        );
+      }
     })();
   </script>
 </body>
